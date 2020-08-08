@@ -6,29 +6,10 @@ from dateutil.relativedelta import relativedelta
 import xlsxwriter
 
 
+if (len(sys.argv)==2):
+    print("Reading: ", str(sys.argv[1]))
 
-#print(len(sys.argv))
-if (len(sys.argv)==1):
-    #print("Reading: ", str(sys.argv[1]))
-    #data = pd.read_excel(str(sys.argv[1]))
-    data = pd.read_excel("sample-expense.xlsx")
-    #data.columns = ["]
-
-    #Expenses Data
-    expenses = data.iloc[21:,:6]
-    expenses.columns = data.iloc[20,:6]
-    expenses.columns = [c.replace(' ', '_') for c in expenses.columns]
-    #print (expenses.to_string())
-
-    #Credit Card Info
-    cc_info = data.iloc[1:4,7:9]
-    cc_info.columns = data.iloc[0,7:9]
-    cc_info.columns = [c.replace(' ', '_') for c in cc_info.columns]
-    #print (cc_info.to_string())
-    
-    cc_list = expenses.Payment_Method.unique()
-    #print (cc_list)
-
+    #Excel Files
     writer = pd.ExcelWriter('expenses-report.xlsx', engine='xlsxwriter', datetime_format='dd/mm/yyyy')
     workbook  = writer.book
 
@@ -38,14 +19,26 @@ if (len(sys.argv)==1):
     title_format.set_font_size(17)
     subheader_format = workbook.add_format({'bold': True})
     subheader_format.set_font_size(12)
+    
+    #Expenses Data
+    data = pd.read_excel(str(sys.argv[1]))
+    expenses = data.iloc[21:,:6]
+    expenses.columns = data.iloc[20,:6]
+    expenses.columns = [c.replace(' ', '_') for c in expenses.columns]
 
-        
+    #Credit Card Info
+    cc_info = data.iloc[1:4,7:9]
+    cc_info.columns = data.iloc[0,7:9]
+    cc_info.columns = [c.replace(' ', '_') for c in cc_info.columns]
+    cc_list = expenses.Payment_Method.unique()
+
     for cc in cc_list:
 
+        print("Generating report for ", cc)
         condition = cc_info["Credit_Card"] == cc
         bill_cycle = cc_info[condition].iloc[0,1]
-        print("/////////////////////////////////////////////////////////////////////////////////////////////////")
-        print("Credit Card: ", cc)
+        bill_cycle.replace("Every ", "")
+        
         
         condition = expenses["Payment_Method"] == cc
         #print(expenses[condition].to_string())
@@ -88,7 +81,7 @@ if (len(sys.argv)==1):
             
             start_date = next_bill_cycle - relativedelta(months=1)
             end_date = next_bill_cycle - relativedelta(days=1)
-            curr_cycle.loc[-2] = ["Billing Cycle:", str(start_date.strftime("%d/%m/%Y")), str(end_date.strftime("%d/%m/%Y")), "", "", "", "", ""]
+            curr_cycle.loc[-2] = ["Billing Cycle:", str(start_date.strftime("%d/%m/%Y")) + " to " + str(end_date.strftime("%d/%m/%Y")), "", "", "", "", "", ""]
             curr_cycle.index = curr_cycle.index + 2
             curr_cycle = curr_cycle.sort_index()
             curr_cycle.loc[-1] = ['', '', '', '', '', '', '', '']
@@ -128,8 +121,8 @@ if (len(sys.argv)==1):
         
 
     #Repayment
+    print("Generating report for Debt Collection")
     debtor_list = expenses.Payee.unique()
-    print(debtor_list)
 
     index = 1
     for debtor in debtor_list:
@@ -148,7 +141,6 @@ if (len(sys.argv)==1):
         debtor_data = debtor_data.reset_index(drop=True)
         debtor_data.loc[-1] = ['Total Sum:', str(total_sum), '', '', '', '']
         debtor_data = debtor_data.reset_index(drop=True)
-        print(debtor_data)
         debtor_data.to_excel(writer, sheet_name="Debt Collection", index=False, startrow=index)
         debt_worksheet = writer.sheets["Debt Collection"]
         debt_worksheet.write(str("A"+str(index)), debtor, title_format)
@@ -160,13 +152,8 @@ if (len(sys.argv)==1):
         debt_worksheet.set_column('A:C', 11, left)
         debt_worksheet.set_column('D:F', 23, left)
         debt_worksheet.set_column('E:E', 35, left)
+        
     writer.save()
-
-
-
-
-
-
 
 elif (len(sys.argv)<2):
     print("Input excel file as an argument")

@@ -1,4 +1,4 @@
-# expense-report-generator
+# Expense Report Generator
 Personalised automated expenses breakdown, generating individual credit card reports based on billing cycle. 
 
 # Install dependencies

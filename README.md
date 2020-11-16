@@ -1,2 +1,2 @@
 # expense-report-generator
-Automated expenses breakdown with credit card reports
+Personalised automated expenses breakdown with individual credit card reports.
